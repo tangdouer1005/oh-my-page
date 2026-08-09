@@ -1,0 +1,406 @@
+"use client";
+
+import { ChangeEvent, DragEvent, FormEvent, useEffect, useRef, useState } from "react";
+
+type EngineKey = "google" | "baidu" | "bing";
+
+type Site = {
+  id: string;
+  title: string;
+  url: string;
+  note: string;
+  icon?: string;
+};
+
+type Draft = Omit<Site, "id">;
+
+const STORAGE_KEY = "oh-my-page:sites:v1";
+const ENGINE_KEY = "oh-my-page:engine:v1";
+const MAX_SITES = 20;
+
+const engines: Record<EngineKey, { label: string; short: string; searchUrl: string }> = {
+  google: { label: "Google", short: "G", searchUrl: "https://www.google.com/search?q=" },
+  baidu: { label: "百度", short: "百", searchUrl: "https://www.baidu.com/s?wd=" },
+  bing: { label: "Bing", short: "B", searchUrl: "https://www.bing.com/search?q=" },
+};
+
+const defaultSites: Site[] = [
+  { id: "github", title: "GitHub", url: "https://github.com", note: "代码、项目与协作" },
+  { id: "feishu", title: "飞书", url: "https://www.feishu.cn", note: "文档、消息与工作台" },
+  { id: "scholar", title: "Google Scholar", url: "https://scholar.google.com", note: "检索论文与引用" },
+  { id: "arxiv", title: "arXiv", url: "https://arxiv.org", note: "浏览最新研究预印本" },
+  { id: "chatgpt", title: "ChatGPT", url: "https://chatgpt.com", note: "对话、写作与研究" },
+  { id: "gmail", title: "Gmail", url: "https://mail.google.com", note: "邮件与通知" },
+  { id: "youtube", title: "YouTube", url: "https://www.youtube.com", note: "视频、课程与订阅" },
+  { id: "bilibili", title: "哔哩哔哩", url: "https://www.bilibili.com", note: "视频与稍后再看" },
+];
+
+const emptyDraft: Draft = { title: "", url: "", note: "", icon: "" };
+
+function normalizeUrl(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+}
+
+function getFavicon(site: Site) {
+  if (site.icon) return site.icon;
+  try {
+    return `${new URL(normalizeUrl(site.url)).origin}/favicon.ico`;
+  } catch {
+    return "";
+  }
+}
+
+function openInNewTab(url: string) {
+  const nextTab = window.open(url, "_blank");
+  if (nextTab) {
+    nextTab.opener = null;
+    nextTab.focus();
+  }
+}
+
+function SiteIcon({ site }: { site: Site }) {
+  const [failed, setFailed] = useState(false);
+  const source = getFavicon(site);
+
+  useEffect(() => setFailed(false), [source]);
+
+  return (
+    <span className="site-icon" aria-hidden="true">
+      {source && !failed ? (
+        <img src={source} alt="" onError={() => setFailed(true)} />
+      ) : (
+        <span className="site-initial">{site.title.slice(0, 1).toUpperCase()}</span>
+      )}
+    </span>
+  );
+}
+
+function isValidSite(value: unknown): value is Site {
+  if (!value || typeof value !== "object") return false;
+  const site = value as Partial<Site>;
+  return Boolean(
+    typeof site.id === "string" &&
+      typeof site.title === "string" &&
+      typeof site.url === "string" &&
+      typeof site.note === "string" &&
+      (site.icon === undefined || typeof site.icon === "string"),
+  );
+}
+
+export default function Home() {
+  const [sites, setSites] = useState<Site[]>(defaultSites);
+  const [engine, setEngine] = useState<EngineKey>("google");
+  const [query, setQuery] = useState("");
+  const [editing, setEditing] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draft, setDraft] = useState<Draft>(emptyDraft);
+  const [formError, setFormError] = useState("");
+  const [toast, setToast] = useState("");
+  const importInput = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    try {
+      const storedSites = localStorage.getItem(STORAGE_KEY);
+      const storedEngine = localStorage.getItem(ENGINE_KEY) as EngineKey | null;
+      if (storedSites) {
+        const parsed = JSON.parse(storedSites);
+        if (Array.isArray(parsed) && parsed.every(isValidSite)) setSites(parsed.slice(0, MAX_SITES));
+      }
+      if (storedEngine && storedEngine in engines) setEngine(storedEngine);
+    } catch {
+      // Keep the safe defaults if saved browser data is malformed.
+    } finally {
+      setHydrated(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(sites));
+    localStorage.setItem(ENGINE_KEY, engine);
+  }, [sites, engine, hydrated]);
+
+  useEffect(() => {
+    if (!toast) return;
+    const timer = window.setTimeout(() => setToast(""), 2400);
+    return () => window.clearTimeout(timer);
+  }, [toast]);
+
+  function submitSearch(event: FormEvent) {
+    event.preventDefault();
+    const value = query.trim();
+    if (!value) return;
+    openInNewTab(`${engines[engine].searchUrl}${encodeURIComponent(value)}`);
+  }
+
+  function beginAdd() {
+    setEditingId(null);
+    setDraft(emptyDraft);
+    setFormError("");
+    setModalOpen(true);
+  }
+
+  function beginEdit(site: Site) {
+    setEditingId(site.id);
+    setDraft({ title: site.title, url: site.url, note: site.note, icon: site.icon ?? "" });
+    setFormError("");
+    setModalOpen(true);
+  }
+
+  function saveSite(event: FormEvent) {
+    event.preventDefault();
+    const title = draft.title.trim();
+    const url = normalizeUrl(draft.url);
+
+    if (!title || !url) {
+      setFormError("请填写网站名称和网址。");
+      return;
+    }
+
+    try {
+      new URL(url);
+    } catch {
+      setFormError("请输入有效的网址，例如 example.com。");
+      return;
+    }
+
+    if (editingId) {
+      setSites((current) =>
+        current.map((site) =>
+          site.id === editingId ? { ...site, ...draft, title, url, note: draft.note.trim() } : site,
+        ),
+      );
+      setToast("网站已更新");
+    } else {
+      if (sites.length >= MAX_SITES) {
+        setFormError(`最多可添加 ${MAX_SITES} 个网站。`);
+        return;
+      }
+      setSites((current) => [
+        ...current,
+        { id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, ...draft, title, url, note: draft.note.trim() },
+      ]);
+      setToast("网站已添加");
+    }
+
+    setModalOpen(false);
+  }
+
+  function deleteSite(id: string) {
+    const site = sites.find((item) => item.id === id);
+    if (!site || !window.confirm(`删除“${site.title}”？`)) return;
+    setSites((current) => current.filter((item) => item.id !== id));
+    setToast("网站已删除");
+  }
+
+  function dropSite(event: DragEvent, targetId: string) {
+    event.preventDefault();
+    if (!draggedId || draggedId === targetId) return;
+    setSites((current) => {
+      const from = current.findIndex((site) => site.id === draggedId);
+      const to = current.findIndex((site) => site.id === targetId);
+      if (from < 0 || to < 0) return current;
+      const reordered = [...current];
+      const [moved] = reordered.splice(from, 1);
+      reordered.splice(to, 0, moved);
+      return reordered;
+    });
+    setDraggedId(null);
+  }
+
+  function exportConfig() {
+    const payload = JSON.stringify({ version: 1, engine, sites }, null, 2);
+    const blob = new Blob([payload], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "oh-my-page-config.json";
+    anchor.click();
+    URL.revokeObjectURL(url);
+    setToast("配置已导出");
+  }
+
+  async function importConfig(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    try {
+      const parsed = JSON.parse(await file.text()) as { sites?: unknown; engine?: unknown } | unknown[];
+      const importedSites = Array.isArray(parsed) ? parsed : parsed.sites;
+      const importedEngine = Array.isArray(parsed) ? undefined : parsed.engine;
+      if (!Array.isArray(importedSites) || !importedSites.every(isValidSite)) throw new Error("invalid");
+      setSites(importedSites.slice(0, MAX_SITES));
+      if (typeof importedEngine === "string" && importedEngine in engines) setEngine(importedEngine as EngineKey);
+      setToast("配置已导入");
+    } catch {
+      setToast("导入失败：请选择有效的配置文件");
+    }
+  }
+
+  function loadIcon(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/") || file.size > 2 * 1024 * 1024) {
+      setFormError("请选择不超过 2 MB 的图片。");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setDraft((current) => ({ ...current, icon: String(reader.result) }));
+    reader.readAsDataURL(file);
+  }
+
+  return (
+    <main className="page-shell">
+      <header className="topbar">
+        <div className="wordmark" aria-label="Oh my page">
+          <span>OH</span><i /> <span>MY.PAGE</span>
+        </div>
+        <button className={`edit-toggle ${editing ? "active" : ""}`} onClick={() => setEditing((value) => !value)}>
+          <span className="edit-dot" />
+          {editing ? "完成" : "编辑"}
+        </button>
+      </header>
+
+      <section className="workspace" aria-label="浏览器起始页">
+        <form className="search-panel" onSubmit={submitSearch}>
+          <div className="engine-switcher" role="group" aria-label="搜索引擎">
+            {(Object.keys(engines) as EngineKey[]).map((key) => (
+              <button
+                key={key}
+                type="button"
+                className={engine === key ? "selected" : ""}
+                onClick={() => setEngine(key)}
+                aria-pressed={engine === key}
+                title={engines[key].label}
+              >
+                <span>{engines[key].short}</span>
+              </button>
+            ))}
+          </div>
+          <label className="search-field">
+            <span className="sr-only">使用 {engines[engine].label} 搜索</span>
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder={`使用 ${engines[engine].label} 搜索`}
+              spellCheck={false}
+            />
+          </label>
+          <button className="search-submit" type="submit" aria-label="在新标签页搜索">
+            <span>搜索</span>
+            <b aria-hidden="true">↗</b>
+          </button>
+        </form>
+
+        <div className="section-heading">
+          <span>常用网站</span>
+          <span>{sites.length.toString().padStart(2, "0")} / {MAX_SITES}</span>
+        </div>
+
+        <div className={`site-grid ${editing ? "is-editing" : ""}`}>
+          {sites.map((site) => (
+            <article
+              className={`site-card ${draggedId === site.id ? "is-dragging" : ""}`}
+              key={site.id}
+              draggable={editing}
+              onDragStart={() => setDraggedId(site.id)}
+              onDragEnd={() => setDraggedId(null)}
+              onDragOver={(event) => editing && event.preventDefault()}
+              onDrop={(event) => dropSite(event, site.id)}
+            >
+              <button
+                className="site-launch"
+                onClick={() => !editing && openInNewTab(normalizeUrl(site.url))}
+                disabled={editing}
+                aria-label={`打开 ${site.title}`}
+              >
+                <SiteIcon site={site} />
+                <span className="site-title">{site.title}</span>
+              </button>
+              {!editing && site.note && <div className="site-note">{site.note}</div>}
+              {editing && (
+                <div className="card-controls">
+                  <span className="drag-label" title="拖动排序">拖动</span>
+                  <button onClick={() => beginEdit(site)}>修改</button>
+                  <button className="danger" onClick={() => deleteSite(site.id)}>删除</button>
+                </div>
+              )}
+            </article>
+          ))}
+          {editing && sites.length < MAX_SITES && (
+            <button className="add-card" onClick={beginAdd}>
+              <span>＋</span>
+              添加网站
+            </button>
+          )}
+        </div>
+
+        {editing && (
+          <div className="edit-bar">
+            <span>拖动卡片调整顺序</span>
+            <div>
+              <button onClick={() => importInput.current?.click()}>导入配置</button>
+              <button onClick={exportConfig}>导出配置</button>
+            </div>
+          </div>
+        )}
+        <input ref={importInput} className="hidden-input" type="file" accept="application/json,.json" onChange={importConfig} />
+      </section>
+
+      {modalOpen && (
+        <div className="modal-backdrop" onMouseDown={() => setModalOpen(false)}>
+          <div className="site-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" onMouseDown={(event) => event.stopPropagation()}>
+            <div className="modal-heading">
+              <div>
+                <span>网站资料</span>
+                <h2 id="modal-title">{editingId ? "修改网站" : "添加网站"}</h2>
+              </div>
+              <button className="close-button" onClick={() => setModalOpen(false)} aria-label="关闭">×</button>
+            </div>
+            <form onSubmit={saveSite}>
+              <label>
+                <span>名称</span>
+                <input value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value })} placeholder="例如 GitHub" />
+              </label>
+              <label>
+                <span>网址</span>
+                <input value={draft.url} onChange={(event) => setDraft({ ...draft, url: event.target.value })} placeholder="github.com" inputMode="url" />
+              </label>
+              <label>
+                <span>悬停备注</span>
+                <textarea value={draft.note} onChange={(event) => setDraft({ ...draft, note: event.target.value })} placeholder="一句话说明这个网站的用途" maxLength={80} />
+              </label>
+              <div className="icon-row">
+                <div className="icon-preview">
+                  <SiteIcon site={{ id: "preview", title: draft.title || "网站", url: draft.url, note: "", icon: draft.icon }} />
+                </div>
+                <div>
+                  <span>网站图标</span>
+                  <p>默认读取网站图标，也可以上传图片。</p>
+                </div>
+                <label className="upload-button">
+                  更换图标
+                  <input type="file" accept="image/*" onChange={loadIcon} />
+                </label>
+              </div>
+              {draft.icon && <button className="clear-icon" type="button" onClick={() => setDraft({ ...draft, icon: "" })}>恢复自动图标</button>}
+              {formError && <p className="form-error">{formError}</p>}
+              <div className="modal-actions">
+                <button type="button" onClick={() => setModalOpen(false)}>取消</button>
+                <button className="primary" type="submit">保存网站</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {toast && <div className="toast" role="status">{toast}</div>}
+    </main>
+  );
+}
