@@ -1,4 +1,5 @@
 :root {
+  color-scheme: light;
   --canvas: #eef0f2;
   --canvas-deep: #e4e7ea;
   --surface: #fbfcfd;
@@ -12,8 +13,29 @@
   --signal: #f05b3d;
   --signal-soft: #fff0ec;
   --danger: #bb4747;
+  --ink-contrast: #ffffff;
   --shadow-soft: 0 1px 1px rgba(20, 24, 29, 0.04), 0 12px 34px rgba(31, 38, 47, 0.07);
   --shadow-lifted: 0 2px 3px rgba(20, 24, 29, 0.04), 0 22px 54px rgba(31, 38, 47, 0.13);
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --canvas: #111315;
+  --canvas-deep: #181b1f;
+  --surface: #191c20;
+  --surface-strong: #20242a;
+  --ink: #f1f3f5;
+  --ink-soft: #d9dee4;
+  --muted: #9aa3ae;
+  --quiet: #707985;
+  --line: #2d3238;
+  --line-strong: #414850;
+  --signal: #ff7256;
+  --signal-soft: rgba(255, 114, 86, 0.13);
+  --danger: #ff8181;
+  --ink-contrast: #111315;
+  --shadow-soft: 0 1px 1px rgba(0, 0, 0, 0.18), 0 16px 40px rgba(0, 0, 0, 0.2);
+  --shadow-lifted: 0 2px 4px rgba(0, 0, 0, 0.2), 0 24px 58px rgba(0, 0, 0, 0.34);
 }
 
 * { box-sizing: border-box; }
@@ -32,6 +54,7 @@ body {
   font-family: var(--font-geist-sans, "Avenir Next"), "PingFang SC", "Microsoft YaHei", sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  transition: background 220ms ease, color 180ms ease;
 }
 
 button,
@@ -71,9 +94,11 @@ textarea:focus-visible {
   align-items: center;
   justify-content: flex-end;
   height: 38px;
+  gap: 6px;
 }
 
-.edit-toggle {
+.edit-toggle,
+.theme-toggle {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -88,6 +113,7 @@ textarea:focus-visible {
   transition: background 180ms ease, border-color 180ms ease, color 180ms ease, transform 180ms ease;
 }
 
+.theme-toggle:hover,
 .edit-toggle:hover,
 .edit-toggle.active {
   border-color: rgba(255, 255, 255, 0.85);
@@ -96,7 +122,25 @@ textarea:focus-visible {
   box-shadow: 0 1px 1px rgba(20, 24, 29, 0.04);
 }
 
-.edit-toggle:hover { transform: translateY(-1px); }
+.edit-toggle:hover,
+.theme-toggle:hover { transform: translateY(-1px); }
+
+.theme-mark {
+  display: grid;
+  place-items: center;
+  width: 13px;
+  height: 13px;
+  color: var(--signal);
+  font-size: 14px;
+  line-height: 1;
+}
+
+html[data-theme="dark"] .edit-toggle:hover,
+html[data-theme="dark"] .edit-toggle.active,
+html[data-theme="dark"] .theme-toggle:hover {
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.055);
+}
 
 .edit-dot {
   width: 6px;
@@ -246,7 +290,7 @@ textarea:focus-visible {
   border: 0;
   border-radius: 16px;
   background: var(--ink);
-  color: white;
+  color: var(--ink-contrast);
   cursor: pointer;
   transition: transform 180ms ease, background 180ms ease, border-radius 180ms ease;
 }
@@ -860,7 +904,7 @@ textarea:focus-visible {
 .modal-actions button.primary {
   border-color: var(--ink);
   background: var(--ink);
-  color: white;
+  color: var(--ink-contrast);
 }
 
 .modal-actions button:hover { border-color: var(--line-strong); }
@@ -876,10 +920,84 @@ textarea:focus-visible {
   border-radius: 11px;
   background: var(--ink);
   box-shadow: 0 14px 38px rgba(20, 25, 31, 0.24);
-  color: white;
+  color: var(--ink-contrast);
   font-size: 12px;
   transform: translateX(-50%);
   animation: toast-in 180ms ease-out;
+}
+
+html[data-theme="dark"] .search-panel {
+  border-color: rgba(255, 255, 255, 0.075);
+}
+
+html[data-theme="dark"] .group-count,
+html[data-theme="dark"] .group-header:hover .group-chevron {
+  background: rgba(255, 255, 255, 0.045);
+}
+
+html[data-theme="dark"] .site-card {
+  border-color: rgba(255, 255, 255, 0.075);
+  background: rgba(27, 30, 34, 0.82);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.025);
+}
+
+html[data-theme="dark"] .site-card:hover { background: var(--surface-strong); }
+
+html[data-theme="dark"] .site-icon { border-color: var(--line); }
+
+html[data-theme="dark"] .site-note {
+  background: #090b0d;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+html[data-theme="dark"] .card-controls {
+  background: rgba(25, 28, 32, 0.97);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.3);
+}
+
+html[data-theme="dark"] .card-controls button.danger:hover {
+  background: rgba(255, 90, 90, 0.1);
+}
+
+html[data-theme="dark"] .add-card,
+html[data-theme="dark"] .edit-bar button {
+  background: rgba(255, 255, 255, 0.025);
+}
+
+html[data-theme="dark"] .edit-bar button,
+html[data-theme="dark"] .clear-icon,
+html[data-theme="dark"] .upload-button {
+  color: var(--muted);
+}
+
+html[data-theme="dark"] .edit-bar button:hover,
+html[data-theme="dark"] .category-options button:hover {
+  background: var(--surface-strong);
+}
+
+html[data-theme="dark"] .site-modal {
+  border-color: rgba(255, 255, 255, 0.09);
+}
+
+html[data-theme="dark"] .site-modal form > label > span,
+html[data-theme="dark"] .icon-row > div > span,
+html[data-theme="dark"] .category-field > span {
+  color: var(--muted);
+}
+
+html[data-theme="dark"] .site-modal input,
+html[data-theme="dark"] .site-modal textarea,
+html[data-theme="dark"] .category-options button,
+html[data-theme="dark"] .icon-row {
+  background: #181b1f;
+}
+
+html[data-theme="dark"] .site-modal input:focus,
+html[data-theme="dark"] .site-modal textarea:focus,
+html[data-theme="dark"] .category-options button.selected,
+html[data-theme="dark"] .upload-button,
+html[data-theme="dark"] .modal-actions button:not(.primary) {
+  background: var(--surface-strong);
 }
 
 @keyframes toast-in {

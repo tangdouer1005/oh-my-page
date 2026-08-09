@@ -4,6 +4,7 @@ import { ChangeEvent, DragEvent, FormEvent, useEffect, useRef, useState } from "
 
 type EngineKey = "google" | "baidu" | "bing";
 type CategoryKey = "work" | "daily";
+type ThemeKey = "light" | "dark";
 
 type Site = {
   id: string;
@@ -19,6 +20,7 @@ type Draft = Omit<Site, "id">;
 const STORAGE_KEY = "oh-my-page:sites:v1";
 const ENGINE_KEY = "oh-my-page:engine:v1";
 const COLLAPSE_KEY = "oh-my-page:collapsed-groups:v1";
+const THEME_KEY = "oh-my-page:theme:v1";
 const ALPHAXIV_MIGRATION_KEY = "oh-my-page:migrations:alphaxiv:v1";
 const POPULAR_SITES_MIGRATION_KEY = "oh-my-page:migrations:popular-sites:v1";
 const X_SITE_MIGRATION_KEY = "oh-my-page:migrations:x-site:v1";
@@ -121,6 +123,7 @@ function normalizeStoredSite(value: unknown): Site | null {
 export default function Home() {
   const [sites, setSites] = useState<Site[]>(defaultSites);
   const [engine, setEngine] = useState<EngineKey>("google");
+  const [theme, setTheme] = useState<ThemeKey>("light");
   const [query, setQuery] = useState("");
   const [editing, setEditing] = useState(false);
   const [collapsed, setCollapsed] = useState<Record<CategoryKey, boolean>>({ work: false, daily: true });
@@ -138,6 +141,7 @@ export default function Home() {
       const storedSites = localStorage.getItem(STORAGE_KEY);
       const storedEngine = localStorage.getItem(ENGINE_KEY) as EngineKey | null;
       const storedCollapse = localStorage.getItem(COLLAPSE_KEY);
+      const storedTheme = localStorage.getItem(THEME_KEY);
       if (storedSites) {
         const parsed = JSON.parse(storedSites);
         if (Array.isArray(parsed)) {
@@ -189,6 +193,14 @@ export default function Home() {
         const parsed = JSON.parse(storedCollapse) as Partial<Record<CategoryKey, unknown>>;
         setCollapsed({ work: parsed.work === true, daily: parsed.daily === true });
       }
+      const initialTheme =
+        storedTheme === "light" || storedTheme === "dark"
+          ? storedTheme
+          : window.matchMedia("(prefers-color-scheme: dark)").matches
+            ? "dark"
+            : "light";
+      setTheme(initialTheme);
+      document.documentElement.dataset.theme = initialTheme;
     } catch {
       // Keep the safe defaults if saved browser data is malformed.
     } finally {
@@ -201,7 +213,9 @@ export default function Home() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(sites));
     localStorage.setItem(ENGINE_KEY, engine);
     localStorage.setItem(COLLAPSE_KEY, JSON.stringify(collapsed));
-  }, [sites, engine, collapsed, hydrated]);
+    localStorage.setItem(THEME_KEY, theme);
+    document.documentElement.dataset.theme = theme;
+  }, [sites, engine, collapsed, theme, hydrated]);
 
   useEffect(() => {
     if (!toast) return;
@@ -350,6 +364,16 @@ export default function Home() {
   return (
     <main className="page-shell">
       <header className="topbar">
+        <button
+          className="theme-toggle"
+          type="button"
+          onClick={() => setTheme((current) => current === "light" ? "dark" : "light")}
+          aria-label={`切换到${theme === "dark" ? "白天" : "黑夜"}模式`}
+          title={`切换到${theme === "dark" ? "白天" : "黑夜"}模式`}
+        >
+          <span className="theme-mark" aria-hidden="true">{theme === "dark" ? "☀" : "☾"}</span>
+          {theme === "dark" ? "白天" : "黑夜"}
+        </button>
         <button
           className={`edit-toggle ${editing ? "active" : ""}`}
           onClick={() => {

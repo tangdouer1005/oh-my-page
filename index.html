@@ -6,6 +6,15 @@
     <meta name="description" content="快速搜索并打开常用网站的极简浏览器起始页。" />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <title>起始页</title>
+    <script>
+      try {
+        const saved = localStorage.getItem("oh-my-page:theme:v1");
+        const theme = saved === "light" || saved === "dark"
+          ? saved
+          : window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        document.documentElement.dataset.theme = theme;
+      } catch {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

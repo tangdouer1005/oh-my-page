@@ -21,9 +21,20 @@ export const metadata: Metadata = {
   },
 };
 
+const themeScript = `
+  try {
+    const saved = localStorage.getItem("oh-my-page:theme:v1");
+    const theme = saved === "light" || saved === "dark"
+      ? saved
+      : window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    document.documentElement.dataset.theme = theme;
+  } catch {}
+`;
+
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="zh-CN">
+    <html lang="zh-CN" suppressHydrationWarning>
+      <head><script dangerouslySetInnerHTML={{ __html: themeScript }} /></head>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>{children}</body>
     </html>
   );

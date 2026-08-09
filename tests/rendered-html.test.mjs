@@ -32,13 +32,15 @@ test("server-renders the finished start page", async () => {
   assert.match(html, /小红书/);
   assert.match(html, />X</);
   assert.match(html, /编辑/);
+  assert.match(html, /黑夜/);
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape|react-loading-skeleton/);
 });
 
 test("includes local configuration and start-page interactions", async () => {
-  const [page, layout, packageJson] = await Promise.all([
+  const [page, layout, staticHtml, packageJson] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../index.html", import.meta.url), "utf8"),
     readFile(new URL("../package.json", import.meta.url), "utf8"),
   ]);
 
@@ -46,6 +48,8 @@ test("includes local configuration and start-page interactions", async () => {
   assert.match(page, /google.*baidu.*bing/s);
   assert.match(page, /draggable=\{editing\}/);
   assert.match(page, /COLLAPSE_KEY/);
+  assert.match(page, /THEME_KEY/);
+  assert.match(page, /prefers-color-scheme: dark/);
   assert.match(page, /ALPHAXIV_MIGRATION_KEY/);
   assert.match(page, /POPULAR_SITES_MIGRATION_KEY/);
   assert.match(page, /X_SITE_MIGRATION_KEY/);
@@ -55,5 +59,7 @@ test("includes local configuration and start-page interactions", async () => {
   assert.match(page, /importConfig/);
   assert.match(page, /openInNewTab/);
   assert.match(layout, /lang="zh-CN"/);
+  assert.match(layout, /dataset\.theme/);
+  assert.match(staticHtml, /dataset\.theme/);
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
 });
