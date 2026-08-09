@@ -2,6 +2,8 @@
 
 一个专注于搜索和常用网站的极简浏览器起始页。
 
+在线地址：<https://tangdouer1005.github.io/oh-my-page/>
+
 ## 功能
 
 - 默认使用 Google，并可切换百度与 Bing
@@ -27,6 +29,7 @@ npm run dev
 
 ```bash
 npm test
+npm run build:pages
 ```
 
-项目使用 vinext 构建，并保持与后续浏览器新标签页扩展打包兼容的纯前端状态设计。
+项目使用 vinext 开发，并通过 Vite 生成 GitHub Pages 静态版本。每次推送到 `main` 分支后，GitHub Actions 会自动发布最新页面。
