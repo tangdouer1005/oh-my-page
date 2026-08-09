@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Oh My Page — 极简浏览器起始页",
+  title: "起始页",
   description: "快速搜索并打开常用网站的极简浏览器起始页。",
   icons: {
     icon: "/favicon.svg",

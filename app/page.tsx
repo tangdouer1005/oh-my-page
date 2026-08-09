@@ -258,9 +258,6 @@ export default function Home() {
   return (
     <main className="page-shell">
       <header className="topbar">
-        <div className="wordmark" aria-label="Oh my page">
-          <span>OH</span><i /> <span>MY.PAGE</span>
-        </div>
         <button className={`edit-toggle ${editing ? "active" : ""}`} onClick={() => setEditing((value) => !value)}>
           <span className="edit-dot" />
           {editing ? "完成" : "编辑"}
@@ -268,6 +265,11 @@ export default function Home() {
       </header>
 
       <section className="workspace" aria-label="浏览器起始页">
+        <div className="search-overline" aria-hidden="true">
+          <span>SEARCH</span>
+          <i />
+          <span>{engines[engine].label}</span>
+        </div>
         <form className="search-panel" onSubmit={submitSearch}>
           <div className="engine-switcher" role="group" aria-label="搜索引擎">
             {(Object.keys(engines) as EngineKey[]).map((key) => (
@@ -279,7 +281,8 @@ export default function Home() {
                 aria-pressed={engine === key}
                 title={engines[key].label}
               >
-                <span>{engines[key].short}</span>
+                <span className="engine-mark">{engines[key].short}</span>
+                <span className="engine-name">{engines[key].label}</span>
               </button>
             ))}
           </div>
@@ -293,13 +296,14 @@ export default function Home() {
             />
           </label>
           <button className="search-submit" type="submit" aria-label="在新标签页搜索">
-            <span>搜索</span>
+            <span className="sr-only">搜索</span>
             <b aria-hidden="true">↗</b>
           </button>
         </form>
 
         <div className="section-heading">
           <span>常用网站</span>
+          <i />
           <span>{sites.length.toString().padStart(2, "0")} / {MAX_SITES}</span>
         </div>
 
@@ -322,6 +326,7 @@ export default function Home() {
               >
                 <SiteIcon site={site} />
                 <span className="site-title">{site.title}</span>
+                <span className="site-arrow" aria-hidden="true">↗</span>
               </button>
               {!editing && site.note && <div className="site-note">{site.note}</div>}
               {editing && (

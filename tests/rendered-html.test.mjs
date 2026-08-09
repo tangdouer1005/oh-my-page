@@ -20,7 +20,7 @@ test("server-renders the finished start page", async () => {
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
   const html = await response.text();
-  assert.match(html, /<title>Oh My Page/);
+  assert.match(html, /<title>起始页<\/title>/);
   assert.match(html, /Google/);
   assert.match(html, /常用网站/);
   assert.match(html, /GitHub/);
