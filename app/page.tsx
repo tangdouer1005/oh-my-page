@@ -3,6 +3,7 @@
 import { ChangeEvent, DragEvent, FormEvent, useEffect, useRef, useState } from "react";
 
 type EngineKey = "google" | "baidu" | "bing";
+type CategoryKey = "work" | "daily";
 
 type Site = {
   id: string;
@@ -10,12 +11,14 @@ type Site = {
   url: string;
   note: string;
   icon?: string;
+  category: CategoryKey;
 };
 
 type Draft = Omit<Site, "id">;
 
 const STORAGE_KEY = "oh-my-page:sites:v1";
 const ENGINE_KEY = "oh-my-page:engine:v1";
+const COLLAPSE_KEY = "oh-my-page:collapsed-groups:v1";
 const MAX_SITES = 20;
 
 const engines: Record<EngineKey, { label: string; short: string; searchUrl: string }> = {
@@ -24,18 +27,23 @@ const engines: Record<EngineKey, { label: string; short: string; searchUrl: stri
   bing: { label: "Bing", short: "B", searchUrl: "https://www.bing.com/search?q=" },
 };
 
-const defaultSites: Site[] = [
-  { id: "github", title: "GitHub", url: "https://github.com", note: "代码、项目与协作" },
-  { id: "feishu", title: "飞书", url: "https://www.feishu.cn", note: "文档、消息与工作台" },
-  { id: "scholar", title: "Google Scholar", url: "https://scholar.google.com", note: "检索论文与引用" },
-  { id: "arxiv", title: "arXiv", url: "https://arxiv.org", note: "浏览最新研究预印本" },
-  { id: "chatgpt", title: "ChatGPT", url: "https://chatgpt.com", note: "对话、写作与研究" },
-  { id: "gmail", title: "Gmail", url: "https://mail.google.com", note: "邮件与通知" },
-  { id: "youtube", title: "YouTube", url: "https://www.youtube.com", note: "视频、课程与订阅" },
-  { id: "bilibili", title: "哔哩哔哩", url: "https://www.bilibili.com", note: "视频与稍后再看" },
+const categories: Array<{ key: CategoryKey; label: string; hint: string }> = [
+  { key: "work", label: "工作", hint: "研究、协作与效率" },
+  { key: "daily", label: "日常", hint: "内容、生活与休息" },
 ];
 
-const emptyDraft: Draft = { title: "", url: "", note: "", icon: "" };
+const defaultSites: Site[] = [
+  { id: "github", title: "GitHub", url: "https://github.com", note: "代码、项目与协作", category: "work" },
+  { id: "feishu", title: "飞书", url: "https://www.feishu.cn", note: "文档、消息与工作台", category: "work" },
+  { id: "scholar", title: "Google Scholar", url: "https://scholar.google.com", note: "检索论文与引用", category: "work" },
+  { id: "arxiv", title: "arXiv", url: "https://arxiv.org", note: "浏览最新研究预印本", category: "work" },
+  { id: "chatgpt", title: "ChatGPT", url: "https://chatgpt.com", note: "对话、写作与研究", category: "work" },
+  { id: "gmail", title: "Gmail", url: "https://mail.google.com", note: "邮件与通知", category: "work" },
+  { id: "youtube", title: "YouTube", url: "https://www.youtube.com", note: "视频、课程与订阅", category: "daily" },
+  { id: "bilibili", title: "哔哩哔哩", url: "https://www.bilibili.com", note: "视频与稍后再看", category: "daily" },
+];
+
+const emptyDraft: Draft = { title: "", url: "", note: "", icon: "", category: "work" };
 
 function normalizeUrl(value: string) {
   const trimmed = value.trim();
@@ -77,16 +85,29 @@ function SiteIcon({ site }: { site: Site }) {
   );
 }
 
-function isValidSite(value: unknown): value is Site {
-  if (!value || typeof value !== "object") return false;
+function normalizeStoredSite(value: unknown): Site | null {
+  if (!value || typeof value !== "object") return null;
   const site = value as Partial<Site>;
-  return Boolean(
+  const valid = Boolean(
     typeof site.id === "string" &&
       typeof site.title === "string" &&
       typeof site.url === "string" &&
       typeof site.note === "string" &&
       (site.icon === undefined || typeof site.icon === "string"),
   );
+  if (!valid) return null;
+  return {
+    id: site.id!,
+    title: site.title!,
+    url: site.url!,
+    note: site.note!,
+    icon: site.icon,
+    category:
+      site.category === "daily" ||
+      (site.category === undefined && (site.id === "youtube" || site.id === "bilibili"))
+        ? "daily"
+        : "work",
+  };
 }
 
 export default function Home() {
@@ -94,6 +115,7 @@ export default function Home() {
   const [engine, setEngine] = useState<EngineKey>("google");
   const [query, setQuery] = useState("");
   const [editing, setEditing] = useState(false);
+  const [collapsed, setCollapsed] = useState<Record<CategoryKey, boolean>>({ work: false, daily: true });
   const [hydrated, setHydrated] = useState(false);
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -107,11 +129,19 @@ export default function Home() {
     try {
       const storedSites = localStorage.getItem(STORAGE_KEY);
       const storedEngine = localStorage.getItem(ENGINE_KEY) as EngineKey | null;
+      const storedCollapse = localStorage.getItem(COLLAPSE_KEY);
       if (storedSites) {
         const parsed = JSON.parse(storedSites);
-        if (Array.isArray(parsed) && parsed.every(isValidSite)) setSites(parsed.slice(0, MAX_SITES));
+        if (Array.isArray(parsed)) {
+          const normalized = parsed.map(normalizeStoredSite).filter((site): site is Site => Boolean(site));
+          if (normalized.length === parsed.length) setSites(normalized.slice(0, MAX_SITES));
+        }
       }
       if (storedEngine && storedEngine in engines) setEngine(storedEngine);
+      if (storedCollapse) {
+        const parsed = JSON.parse(storedCollapse) as Partial<Record<CategoryKey, unknown>>;
+        setCollapsed({ work: parsed.work === true, daily: parsed.daily === true });
+      }
     } catch {
       // Keep the safe defaults if saved browser data is malformed.
     } finally {
@@ -123,7 +153,8 @@ export default function Home() {
     if (!hydrated) return;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(sites));
     localStorage.setItem(ENGINE_KEY, engine);
-  }, [sites, engine, hydrated]);
+    localStorage.setItem(COLLAPSE_KEY, JSON.stringify(collapsed));
+  }, [sites, engine, collapsed, hydrated]);
 
   useEffect(() => {
     if (!toast) return;
@@ -138,16 +169,16 @@ export default function Home() {
     openInNewTab(`${engines[engine].searchUrl}${encodeURIComponent(value)}`);
   }
 
-  function beginAdd() {
+  function beginAdd(category: CategoryKey = "work") {
     setEditingId(null);
-    setDraft(emptyDraft);
+    setDraft({ ...emptyDraft, category });
     setFormError("");
     setModalOpen(true);
   }
 
   function beginEdit(site: Site) {
     setEditingId(site.id);
-    setDraft({ title: site.title, url: site.url, note: site.note, icon: site.icon ?? "" });
+    setDraft({ title: site.title, url: site.url, note: site.note, icon: site.icon ?? "", category: site.category });
     setFormError("");
     setModalOpen(true);
   }
@@ -198,8 +229,9 @@ export default function Home() {
     setToast("网站已删除");
   }
 
-  function dropSite(event: DragEvent, targetId: string) {
+  function dropSite(event: DragEvent, targetId: string, targetCategory: CategoryKey) {
     event.preventDefault();
+    event.stopPropagation();
     if (!draggedId || draggedId === targetId) return;
     setSites((current) => {
       const from = current.findIndex((site) => site.id === draggedId);
@@ -207,14 +239,25 @@ export default function Home() {
       if (from < 0 || to < 0) return current;
       const reordered = [...current];
       const [moved] = reordered.splice(from, 1);
-      reordered.splice(to, 0, moved);
+      reordered.splice(to, 0, { ...moved, category: targetCategory });
       return reordered;
     });
     setDraggedId(null);
   }
 
+  function dropIntoGroup(event: DragEvent, category: CategoryKey) {
+    event.preventDefault();
+    if (!draggedId) return;
+    setSites((current) => {
+      const moved = current.find((site) => site.id === draggedId);
+      if (!moved) return current;
+      return [...current.filter((site) => site.id !== draggedId), { ...moved, category }];
+    });
+    setDraggedId(null);
+  }
+
   function exportConfig() {
-    const payload = JSON.stringify({ version: 1, engine, sites }, null, 2);
+    const payload = JSON.stringify({ version: 2, engine, sites }, null, 2);
     const blob = new Blob([payload], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
@@ -234,8 +277,10 @@ export default function Home() {
       const parsed = JSON.parse(await file.text()) as { sites?: unknown; engine?: unknown } | unknown[];
       const importedSites = Array.isArray(parsed) ? parsed : parsed.sites;
       const importedEngine = Array.isArray(parsed) ? undefined : parsed.engine;
-      if (!Array.isArray(importedSites) || !importedSites.every(isValidSite)) throw new Error("invalid");
-      setSites(importedSites.slice(0, MAX_SITES));
+      if (!Array.isArray(importedSites)) throw new Error("invalid");
+      const normalized = importedSites.map(normalizeStoredSite).filter((site): site is Site => Boolean(site));
+      if (normalized.length !== importedSites.length) throw new Error("invalid");
+      setSites(normalized.slice(0, MAX_SITES));
       if (typeof importedEngine === "string" && importedEngine in engines) setEngine(importedEngine as EngineKey);
       setToast("配置已导入");
     } catch {
@@ -258,7 +303,13 @@ export default function Home() {
   return (
     <main className="page-shell">
       <header className="topbar">
-        <button className={`edit-toggle ${editing ? "active" : ""}`} onClick={() => setEditing((value) => !value)}>
+        <button
+          className={`edit-toggle ${editing ? "active" : ""}`}
+          onClick={() => {
+            if (!editing) setCollapsed({ work: false, daily: false });
+            setEditing((value) => !value);
+          }}
+        >
           <span className="edit-dot" />
           {editing ? "完成" : "编辑"}
         </button>
@@ -307,43 +358,75 @@ export default function Home() {
           <span>{sites.length.toString().padStart(2, "0")} / {MAX_SITES}</span>
         </div>
 
-        <div className={`site-grid ${editing ? "is-editing" : ""}`}>
-          {sites.map((site) => (
-            <article
-              className={`site-card ${draggedId === site.id ? "is-dragging" : ""}`}
-              key={site.id}
-              draggable={editing}
-              onDragStart={() => setDraggedId(site.id)}
-              onDragEnd={() => setDraggedId(null)}
-              onDragOver={(event) => editing && event.preventDefault()}
-              onDrop={(event) => dropSite(event, site.id)}
-            >
-              <button
-                className="site-launch"
-                onClick={() => !editing && openInNewTab(normalizeUrl(site.url))}
-                disabled={editing}
-                aria-label={`打开 ${site.title}`}
-              >
-                <SiteIcon site={site} />
-                <span className="site-title">{site.title}</span>
-                <span className="site-arrow" aria-hidden="true">↗</span>
-              </button>
-              {!editing && site.note && <div className="site-note">{site.note}</div>}
-              {editing && (
-                <div className="card-controls">
-                  <span className="drag-label" title="拖动排序">拖动</span>
-                  <button onClick={() => beginEdit(site)}>修改</button>
-                  <button className="danger" onClick={() => deleteSite(site.id)}>删除</button>
+        <div className="site-groups">
+          {categories.map((category) => {
+            const categorySites = sites.filter((site) => site.category === category.key);
+            const isCollapsed = collapsed[category.key];
+            return (
+              <section className={`site-group ${isCollapsed ? "is-collapsed" : ""}`} key={category.key}>
+                <button
+                  className="group-header"
+                  type="button"
+                  onClick={() => setCollapsed((current) => ({ ...current, [category.key]: !current[category.key] }))}
+                  aria-expanded={!isCollapsed}
+                  aria-controls={`group-${category.key}`}
+                >
+                  <span className={`group-signal ${category.key}`} />
+                  <span className="group-copy">
+                    <b>{category.label}</b>
+                    <small>{category.hint}</small>
+                  </span>
+                  <i />
+                  <span className="group-count">{categorySites.length.toString().padStart(2, "0")}</span>
+                  <span className="group-chevron" aria-hidden="true">⌄</span>
+                </button>
+                <div className="group-content" id={`group-${category.key}`}>
+                  <div
+                    className={`site-grid ${editing ? "is-editing" : ""}`}
+                    onDragOver={(event) => editing && event.preventDefault()}
+                    onDrop={(event) => dropIntoGroup(event, category.key)}
+                  >
+                    {categorySites.map((site) => (
+                      <article
+                        className={`site-card ${draggedId === site.id ? "is-dragging" : ""}`}
+                        key={site.id}
+                        draggable={editing}
+                        onDragStart={() => setDraggedId(site.id)}
+                        onDragEnd={() => setDraggedId(null)}
+                        onDragOver={(event) => editing && event.preventDefault()}
+                        onDrop={(event) => dropSite(event, site.id, category.key)}
+                      >
+                        <button
+                          className="site-launch"
+                          onClick={() => !editing && openInNewTab(normalizeUrl(site.url))}
+                          disabled={editing}
+                          aria-label={`打开 ${site.title}`}
+                        >
+                          <SiteIcon site={site} />
+                          <span className="site-title">{site.title}</span>
+                          <span className="site-arrow" aria-hidden="true">↗</span>
+                        </button>
+                        {!editing && site.note && <div className="site-note">{site.note}</div>}
+                        {editing && (
+                          <div className="card-controls">
+                            <span className="drag-label" title="拖动排序">拖动</span>
+                            <button onClick={() => beginEdit(site)}>修改</button>
+                            <button className="danger" onClick={() => deleteSite(site.id)}>删除</button>
+                          </div>
+                        )}
+                      </article>
+                    ))}
+                    {editing && sites.length < MAX_SITES && (
+                      <button className="add-card" onClick={() => beginAdd(category.key)}>
+                        <span>＋</span>
+                        添加到{category.label}
+                      </button>
+                    )}
+                  </div>
                 </div>
-              )}
-            </article>
-          ))}
-          {editing && sites.length < MAX_SITES && (
-            <button className="add-card" onClick={beginAdd}>
-              <span>＋</span>
-              添加网站
-            </button>
-          )}
+              </section>
+            );
+          })}
         </div>
 
         {editing && (
@@ -381,9 +464,27 @@ export default function Home() {
                 <span>悬停备注</span>
                 <textarea value={draft.note} onChange={(event) => setDraft({ ...draft, note: event.target.value })} placeholder="一句话说明这个网站的用途" maxLength={80} />
               </label>
+              <div className="category-field">
+                <span>分类</span>
+                <div className="category-options" role="group" aria-label="网站分类">
+                  {categories.map((category) => (
+                    <button
+                      key={category.key}
+                      type="button"
+                      className={draft.category === category.key ? "selected" : ""}
+                      onClick={() => setDraft({ ...draft, category: category.key })}
+                      aria-pressed={draft.category === category.key}
+                    >
+                      <i className={category.key} />
+                      <span>{category.label}</span>
+                      <small>{category.hint}</small>
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div className="icon-row">
                 <div className="icon-preview">
-                  <SiteIcon site={{ id: "preview", title: draft.title || "网站", url: draft.url, note: "", icon: draft.icon }} />
+                  <SiteIcon site={{ id: "preview", title: draft.title || "网站", url: draft.url, note: "", icon: draft.icon, category: draft.category }} />
                 </div>
                 <div>
                   <span>网站图标</span>

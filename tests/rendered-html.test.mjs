@@ -23,6 +23,8 @@ test("server-renders the finished start page", async () => {
   assert.match(html, /<title>起始页<\/title>/);
   assert.match(html, /Google/);
   assert.match(html, /常用网站/);
+  assert.match(html, /工作/);
+  assert.match(html, /日常/);
   assert.match(html, /GitHub/);
   assert.match(html, /编辑/);
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape|react-loading-skeleton/);
@@ -38,6 +40,9 @@ test("includes local configuration and start-page interactions", async () => {
   assert.match(page, /localStorage\.setItem/);
   assert.match(page, /google.*baidu.*bing/s);
   assert.match(page, /draggable=\{editing\}/);
+  assert.match(page, /COLLAPSE_KEY/);
+  assert.match(page, /category: CategoryKey/);
+  assert.match(page, /aria-expanded=\{!isCollapsed\}/);
   assert.match(page, /exportConfig/);
   assert.match(page, /importConfig/);
   assert.match(page, /openInNewTab/);
