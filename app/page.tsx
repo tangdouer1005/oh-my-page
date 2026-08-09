@@ -19,6 +19,7 @@ type Draft = Omit<Site, "id">;
 const STORAGE_KEY = "oh-my-page:sites:v1";
 const ENGINE_KEY = "oh-my-page:engine:v1";
 const COLLAPSE_KEY = "oh-my-page:collapsed-groups:v1";
+const ALPHAXIV_MIGRATION_KEY = "oh-my-page:migrations:alphaxiv:v1";
 const MAX_SITES = 20;
 
 const engines: Record<EngineKey, { label: string; short: string; searchUrl: string }> = {
@@ -37,6 +38,7 @@ const defaultSites: Site[] = [
   { id: "feishu", title: "飞书", url: "https://www.feishu.cn", note: "文档、消息与工作台", category: "work" },
   { id: "scholar", title: "Google Scholar", url: "https://scholar.google.com", note: "检索论文与引用", category: "work" },
   { id: "arxiv", title: "arXiv", url: "https://arxiv.org", note: "浏览最新研究预印本", category: "work" },
+  { id: "alphaxiv", title: "alphaXiv", url: "https://www.alphaxiv.org", note: "AI 辅助阅读、批注与讨论论文", category: "work" },
   { id: "chatgpt", title: "ChatGPT", url: "https://chatgpt.com", note: "对话、写作与研究", category: "work" },
   { id: "gmail", title: "Gmail", url: "https://mail.google.com", note: "邮件与通知", category: "work" },
   { id: "youtube", title: "YouTube", url: "https://www.youtube.com", note: "视频、课程与订阅", category: "daily" },
@@ -134,8 +136,26 @@ export default function Home() {
         const parsed = JSON.parse(storedSites);
         if (Array.isArray(parsed)) {
           const normalized = parsed.map(normalizeStoredSite).filter((site): site is Site => Boolean(site));
-          if (normalized.length === parsed.length) setSites(normalized.slice(0, MAX_SITES));
+          if (normalized.length === parsed.length) {
+            const nextSites = normalized.slice(0, MAX_SITES);
+            const alphaXiv = defaultSites.find((site) => site.id === "alphaxiv")!;
+            const needsAlphaXiv =
+              !localStorage.getItem(ALPHAXIV_MIGRATION_KEY) &&
+              !nextSites.some((site) => site.id === "alphaxiv");
+            if (needsAlphaXiv && nextSites.length < MAX_SITES) {
+              const arXivIndex = nextSites.findIndex((site) => site.id === "arxiv");
+              const firstDailyIndex = nextSites.findIndex((site) => site.category === "daily");
+              const insertAt = arXivIndex >= 0 ? arXivIndex + 1 : firstDailyIndex >= 0 ? firstDailyIndex : nextSites.length;
+              nextSites.splice(insertAt, 0, alphaXiv);
+            }
+            if (!needsAlphaXiv || nextSites.some((site) => site.id === "alphaxiv")) {
+              localStorage.setItem(ALPHAXIV_MIGRATION_KEY, "done");
+            }
+            setSites(nextSites);
+          }
         }
+      } else {
+        localStorage.setItem(ALPHAXIV_MIGRATION_KEY, "done");
       }
       if (storedEngine && storedEngine in engines) setEngine(storedEngine);
       if (storedCollapse) {
