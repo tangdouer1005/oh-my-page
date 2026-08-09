@@ -20,6 +20,7 @@ const STORAGE_KEY = "oh-my-page:sites:v1";
 const ENGINE_KEY = "oh-my-page:engine:v1";
 const COLLAPSE_KEY = "oh-my-page:collapsed-groups:v1";
 const ALPHAXIV_MIGRATION_KEY = "oh-my-page:migrations:alphaxiv:v1";
+const POPULAR_SITES_MIGRATION_KEY = "oh-my-page:migrations:popular-sites:v1";
 const MAX_SITES = 20;
 
 const engines: Record<EngineKey, { label: string; short: string; searchUrl: string }> = {
@@ -40,7 +41,10 @@ const defaultSites: Site[] = [
   { id: "arxiv", title: "arXiv", url: "https://arxiv.org", note: "浏览最新研究预印本", category: "work" },
   { id: "alphaxiv", title: "alphaXiv", url: "https://www.alphaxiv.org", note: "AI 辅助阅读、批注与讨论论文", category: "work" },
   { id: "chatgpt", title: "ChatGPT", url: "https://chatgpt.com", note: "对话、写作与研究", category: "work" },
+  { id: "linuxdo", title: "LINUX DO", url: "https://linux.do", note: "技术交流与社区讨论", category: "work" },
   { id: "gmail", title: "Gmail", url: "https://mail.google.com", note: "邮件与通知", category: "work" },
+  { id: "douyin", title: "抖音", url: "https://www.douyin.com", note: "短视频与关注内容", category: "daily" },
+  { id: "xiaohongshu", title: "小红书", url: "https://www.xiaohongshu.com", note: "生活灵感与经验分享", category: "daily" },
   { id: "youtube", title: "YouTube", url: "https://www.youtube.com", note: "视频、课程与订阅", category: "daily" },
   { id: "bilibili", title: "哔哩哔哩", url: "https://www.bilibili.com", note: "视频与稍后再看", category: "daily" },
 ];
@@ -151,11 +155,25 @@ export default function Home() {
             if (!needsAlphaXiv || nextSites.some((site) => site.id === "alphaxiv")) {
               localStorage.setItem(ALPHAXIV_MIGRATION_KEY, "done");
             }
+
+            const popularSites = defaultSites.filter((site) => ["linuxdo", "douyin", "xiaohongshu"].includes(site.id));
+            if (!localStorage.getItem(POPULAR_SITES_MIGRATION_KEY)) {
+              popularSites.forEach((site) => {
+                if (nextSites.length >= MAX_SITES || nextSites.some((existing) => existing.id === site.id)) return;
+                const firstDailyIndex = nextSites.findIndex((existing) => existing.category === "daily");
+                const insertAt = site.category === "work" && firstDailyIndex >= 0 ? firstDailyIndex : nextSites.length;
+                nextSites.splice(insertAt, 0, site);
+              });
+              if (popularSites.every((site) => nextSites.some((existing) => existing.id === site.id))) {
+                localStorage.setItem(POPULAR_SITES_MIGRATION_KEY, "done");
+              }
+            }
             setSites(nextSites);
           }
         }
       } else {
         localStorage.setItem(ALPHAXIV_MIGRATION_KEY, "done");
+        localStorage.setItem(POPULAR_SITES_MIGRATION_KEY, "done");
       }
       if (storedEngine && storedEngine in engines) setEngine(storedEngine);
       if (storedCollapse) {
