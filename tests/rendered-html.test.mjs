@@ -30,6 +30,7 @@ test("server-renders the finished start page", async () => {
   assert.match(html, /LINUX DO/);
   assert.match(html, /抖音/);
   assert.match(html, /小红书/);
+  assert.match(html, />X</);
   assert.match(html, /编辑/);
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape|react-loading-skeleton/);
 });
@@ -47,6 +48,7 @@ test("includes local configuration and start-page interactions", async () => {
   assert.match(page, /COLLAPSE_KEY/);
   assert.match(page, /ALPHAXIV_MIGRATION_KEY/);
   assert.match(page, /POPULAR_SITES_MIGRATION_KEY/);
+  assert.match(page, /X_SITE_MIGRATION_KEY/);
   assert.match(page, /category: CategoryKey/);
   assert.match(page, /aria-expanded=\{!isCollapsed\}/);
   assert.match(page, /exportConfig/);

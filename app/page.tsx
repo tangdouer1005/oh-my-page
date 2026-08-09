@@ -21,6 +21,7 @@ const ENGINE_KEY = "oh-my-page:engine:v1";
 const COLLAPSE_KEY = "oh-my-page:collapsed-groups:v1";
 const ALPHAXIV_MIGRATION_KEY = "oh-my-page:migrations:alphaxiv:v1";
 const POPULAR_SITES_MIGRATION_KEY = "oh-my-page:migrations:popular-sites:v1";
+const X_SITE_MIGRATION_KEY = "oh-my-page:migrations:x-site:v1";
 const MAX_SITES = 20;
 
 const engines: Record<EngineKey, { label: string; short: string; searchUrl: string }> = {
@@ -45,6 +46,7 @@ const defaultSites: Site[] = [
   { id: "gmail", title: "Gmail", url: "https://mail.google.com", note: "邮件与通知", category: "work" },
   { id: "douyin", title: "抖音", url: "https://www.douyin.com", note: "短视频与关注内容", category: "daily" },
   { id: "xiaohongshu", title: "小红书", url: "https://www.xiaohongshu.com", note: "生活灵感与经验分享", category: "daily" },
+  { id: "x", title: "X", url: "https://x.com", note: "动态、观点与关注话题", category: "daily" },
   { id: "youtube", title: "YouTube", url: "https://www.youtube.com", note: "视频、课程与订阅", category: "daily" },
   { id: "bilibili", title: "哔哩哔哩", url: "https://www.bilibili.com", note: "视频与稍后再看", category: "daily" },
 ];
@@ -168,12 +170,19 @@ export default function Home() {
                 localStorage.setItem(POPULAR_SITES_MIGRATION_KEY, "done");
               }
             }
+
+            const xSite = defaultSites.find((site) => site.id === "x")!;
+            if (!localStorage.getItem(X_SITE_MIGRATION_KEY)) {
+              if (nextSites.length < MAX_SITES && !nextSites.some((site) => site.id === xSite.id)) nextSites.push(xSite);
+              if (nextSites.some((site) => site.id === xSite.id)) localStorage.setItem(X_SITE_MIGRATION_KEY, "done");
+            }
             setSites(nextSites);
           }
         }
       } else {
         localStorage.setItem(ALPHAXIV_MIGRATION_KEY, "done");
         localStorage.setItem(POPULAR_SITES_MIGRATION_KEY, "done");
+        localStorage.setItem(X_SITE_MIGRATION_KEY, "done");
       }
       if (storedEngine && storedEngine in engines) setEngine(storedEngine);
       if (storedCollapse) {
