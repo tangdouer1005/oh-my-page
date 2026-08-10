@@ -27,9 +27,8 @@ const preferenceScript = `
     const theme = saved === "light" || saved === "dark"
       ? saved
       : window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-    const savedStyle = localStorage.getItem("oh-my-page:style:v1");
     document.documentElement.dataset.theme = theme;
-    document.documentElement.dataset.style = savedStyle === "apple" ? "apple" : "utility";
+    document.documentElement.dataset.style = "apple";
   } catch {}
 `;
 

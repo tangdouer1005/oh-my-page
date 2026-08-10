@@ -33,7 +33,6 @@ test("server-renders the finished start page", async () => {
   assert.match(html, />X</);
   assert.match(html, /编辑/);
   assert.match(html, /黑夜/);
-  assert.match(html, /Apple/);
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape|react-loading-skeleton/);
 });
 
@@ -50,7 +49,6 @@ test("includes local configuration and start-page interactions", async () => {
   assert.match(page, /draggable=\{editing\}/);
   assert.match(page, /COLLAPSE_KEY/);
   assert.match(page, /THEME_KEY/);
-  assert.match(page, /STYLE_KEY/);
   assert.match(page, /prefers-color-scheme: dark/);
   assert.match(page, /ALPHAXIV_MIGRATION_KEY/);
   assert.match(page, /POPULAR_SITES_MIGRATION_KEY/);
