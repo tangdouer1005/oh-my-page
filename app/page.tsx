@@ -5,6 +5,7 @@ import { ChangeEvent, DragEvent, FormEvent, useEffect, useRef, useState } from "
 type EngineKey = "google" | "baidu" | "bing";
 type CategoryKey = "work" | "daily";
 type ThemeKey = "light" | "dark";
+type StyleKey = "utility" | "apple";
 
 type Site = {
   id: string;
@@ -21,6 +22,7 @@ const STORAGE_KEY = "oh-my-page:sites:v1";
 const ENGINE_KEY = "oh-my-page:engine:v1";
 const COLLAPSE_KEY = "oh-my-page:collapsed-groups:v1";
 const THEME_KEY = "oh-my-page:theme:v1";
+const STYLE_KEY = "oh-my-page:style:v1";
 const ALPHAXIV_MIGRATION_KEY = "oh-my-page:migrations:alphaxiv:v1";
 const POPULAR_SITES_MIGRATION_KEY = "oh-my-page:migrations:popular-sites:v1";
 const X_SITE_MIGRATION_KEY = "oh-my-page:migrations:x-site:v1";
@@ -124,6 +126,7 @@ export default function Home() {
   const [sites, setSites] = useState<Site[]>(defaultSites);
   const [engine, setEngine] = useState<EngineKey>("google");
   const [theme, setTheme] = useState<ThemeKey>("light");
+  const [style, setStyle] = useState<StyleKey>("utility");
   const [query, setQuery] = useState("");
   const [editing, setEditing] = useState(false);
   const [collapsed, setCollapsed] = useState<Record<CategoryKey, boolean>>({ work: false, daily: true });
@@ -142,6 +145,7 @@ export default function Home() {
       const storedEngine = localStorage.getItem(ENGINE_KEY) as EngineKey | null;
       const storedCollapse = localStorage.getItem(COLLAPSE_KEY);
       const storedTheme = localStorage.getItem(THEME_KEY);
+      const storedStyle = localStorage.getItem(STYLE_KEY);
       if (storedSites) {
         const parsed = JSON.parse(storedSites);
         if (Array.isArray(parsed)) {
@@ -201,6 +205,9 @@ export default function Home() {
             : "light";
       setTheme(initialTheme);
       document.documentElement.dataset.theme = initialTheme;
+      const initialStyle = storedStyle === "apple" ? "apple" : "utility";
+      setStyle(initialStyle);
+      document.documentElement.dataset.style = initialStyle;
     } catch {
       // Keep the safe defaults if saved browser data is malformed.
     } finally {
@@ -214,8 +221,10 @@ export default function Home() {
     localStorage.setItem(ENGINE_KEY, engine);
     localStorage.setItem(COLLAPSE_KEY, JSON.stringify(collapsed));
     localStorage.setItem(THEME_KEY, theme);
+    localStorage.setItem(STYLE_KEY, style);
     document.documentElement.dataset.theme = theme;
-  }, [sites, engine, collapsed, theme, hydrated]);
+    document.documentElement.dataset.style = style;
+  }, [sites, engine, collapsed, theme, style, hydrated]);
 
   useEffect(() => {
     if (!toast) return;
@@ -364,6 +373,16 @@ export default function Home() {
   return (
     <main className="page-shell">
       <header className="topbar">
+        <button
+          className={`style-toggle ${style === "apple" ? "active" : ""}`}
+          type="button"
+          onClick={() => setStyle((current) => current === "utility" ? "apple" : "utility")}
+          aria-label={`切换到${style === "apple" ? "工具" : "Apple"}风格`}
+          title={`切换到${style === "apple" ? "工具" : "Apple"}风格`}
+        >
+          <span className="style-mark" aria-hidden="true" />
+          {style === "apple" ? "工具" : "Apple"}
+        </button>
         <button
           className="theme-toggle"
           type="button"

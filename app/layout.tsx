@@ -21,20 +21,22 @@ export const metadata: Metadata = {
   },
 };
 
-const themeScript = `
+const preferenceScript = `
   try {
     const saved = localStorage.getItem("oh-my-page:theme:v1");
     const theme = saved === "light" || saved === "dark"
       ? saved
       : window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    const savedStyle = localStorage.getItem("oh-my-page:style:v1");
     document.documentElement.dataset.theme = theme;
+    document.documentElement.dataset.style = savedStyle === "apple" ? "apple" : "utility";
   } catch {}
 `;
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="zh-CN" suppressHydrationWarning>
-      <head><script dangerouslySetInnerHTML={{ __html: themeScript }} /></head>
+      <head><script dangerouslySetInnerHTML={{ __html: preferenceScript }} /></head>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>{children}</body>
     </html>
   );
