@@ -98,7 +98,8 @@ textarea:focus-visible {
 }
 
 .edit-toggle,
-.theme-toggle {
+.theme-toggle,
+.export-button {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -114,6 +115,7 @@ textarea:focus-visible {
 }
 
 .theme-toggle:hover,
+.export-button:hover,
 .edit-toggle:hover,
 .edit-toggle.active {
   border-color: rgba(255, 255, 255, 0.85);
@@ -123,7 +125,14 @@ textarea:focus-visible {
 }
 
 .edit-toggle:hover,
-.theme-toggle:hover { transform: translateY(-1px); }
+.theme-toggle:hover,
+.export-button:hover { transform: translateY(-1px); }
+
+.export-button > span {
+  color: var(--signal);
+  font-size: 14px;
+  line-height: 1;
+}
 
 .theme-mark {
   display: grid;
@@ -137,7 +146,8 @@ textarea:focus-visible {
 
 html[data-theme="dark"] .edit-toggle:hover,
 html[data-theme="dark"] .edit-toggle.active,
-html[data-theme="dark"] .theme-toggle:hover {
+html[data-theme="dark"] .theme-toggle:hover,
+html[data-theme="dark"] .export-button:hover {
   border-color: rgba(255, 255, 255, 0.08);
   background: rgba(255, 255, 255, 0.055);
 }
@@ -1055,7 +1065,8 @@ html[data-style="apple"][data-theme="dark"] body {
 }
 
 html[data-style="apple"] .edit-toggle,
-html[data-style="apple"] .theme-toggle {
+html[data-style="apple"] .theme-toggle,
+html[data-style="apple"] .export-button {
   border-color: var(--apple-border);
   border-radius: 18px;
   background: var(--apple-glass);

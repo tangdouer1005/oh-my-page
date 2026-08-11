@@ -384,6 +384,10 @@ export default function Home() {
   return (
     <main className="page-shell">
       <header className="topbar">
+        <button className="export-button" type="button" onClick={exportConfig} aria-label="导出 JSON 到剪贴板">
+          <span aria-hidden="true">↑</span>
+          导出
+        </button>
         <button
           className="theme-toggle"
           type="button"
@@ -525,7 +529,6 @@ export default function Home() {
             <span>拖动卡片调整顺序</span>
             <div>
               <button onClick={() => importInput.current?.click()}>导入配置</button>
-              <button onClick={exportConfig} aria-label="导出 JSON 到剪贴板">导出</button>
             </div>
           </div>
         )}
