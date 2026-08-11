@@ -319,16 +319,34 @@ export default function Home() {
     setDraggedId(null);
   }
 
-  function exportConfig() {
+  async function exportConfig() {
     const payload = JSON.stringify({ version: 2, engine, sites }, null, 2);
-    const blob = new Blob([payload], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = "oh-my-page-config.json";
-    anchor.click();
-    URL.revokeObjectURL(url);
-    setToast("配置已导出");
+    try {
+      let copied = false;
+      if (navigator.clipboard?.writeText) {
+        try {
+          await navigator.clipboard.writeText(payload);
+          copied = true;
+        } catch {
+          // Fall back for browsers that expose the API but deny it in this context.
+        }
+      }
+      if (!copied) {
+        const textarea = document.createElement("textarea");
+        textarea.value = payload;
+        textarea.setAttribute("readonly", "");
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+        textarea.select();
+        copied = document.execCommand("copy");
+        textarea.remove();
+        if (!copied) throw new Error("copy failed");
+      }
+      setToast("配置已复制到剪贴板");
+    } catch {
+      setToast("导出失败：无法访问剪贴板");
+    }
   }
 
   async function importConfig(event: ChangeEvent<HTMLInputElement>) {
@@ -507,7 +525,7 @@ export default function Home() {
             <span>拖动卡片调整顺序</span>
             <div>
               <button onClick={() => importInput.current?.click()}>导入配置</button>
-              <button onClick={exportConfig}>导出配置</button>
+              <button onClick={exportConfig} aria-label="导出 JSON 到剪贴板">导出</button>
             </div>
           </div>
         )}

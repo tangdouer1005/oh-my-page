@@ -56,6 +56,8 @@ test("includes local configuration and start-page interactions", async () => {
   assert.match(page, /category: CategoryKey/);
   assert.match(page, /aria-expanded=\{!isCollapsed\}/);
   assert.match(page, /exportConfig/);
+  assert.match(page, /navigator\.clipboard/);
+  assert.match(page, /配置已复制到剪贴板/);
   assert.match(page, /importConfig/);
   assert.match(page, /openInNewTab/);
   assert.match(layout, /lang="zh-CN"/);
