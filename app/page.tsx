@@ -2,7 +2,7 @@
 
 import { ChangeEvent, DragEvent, FormEvent, useEffect, useRef, useState } from "react";
 
-type EngineKey = "google" | "baidu" | "bing";
+type EngineKey = "google" | "bing";
 type CategoryKey = "work" | "daily";
 type ThemeKey = "light" | "dark";
 
@@ -28,7 +28,6 @@ const MAX_SITES = 20;
 
 const engines: Record<EngineKey, { label: string; short: string; searchUrl: string }> = {
   google: { label: "Google", short: "G", searchUrl: "https://www.google.com/search?q=" },
-  baidu: { label: "百度", short: "百", searchUrl: "https://www.baidu.com/s?wd=" },
   bing: { label: "Bing", short: "B", searchUrl: "https://www.bing.com/search?q=" },
 };
 
@@ -39,18 +38,15 @@ const categories: Array<{ key: CategoryKey; label: string; hint: string }> = [
 
 const defaultSites: Site[] = [
   { id: "github", title: "GitHub", url: "https://github.com", note: "代码、项目与协作", category: "work" },
-  { id: "feishu", title: "飞书", url: "https://www.feishu.cn", note: "文档、消息与工作台", category: "work" },
   { id: "scholar", title: "Google Scholar", url: "https://scholar.google.com", note: "检索论文与引用", category: "work" },
-  { id: "arxiv", title: "arXiv", url: "https://arxiv.org", note: "浏览最新研究预印本", category: "work" },
   { id: "alphaxiv", title: "alphaXiv", url: "https://www.alphaxiv.org", note: "AI 辅助阅读、批注与讨论论文", category: "work" },
-  { id: "chatgpt", title: "ChatGPT", url: "https://chatgpt.com", note: "对话、写作与研究", category: "work" },
-  { id: "linuxdo", title: "LINUX DO", url: "https://linux.do", note: "技术交流与社区讨论", category: "work" },
   { id: "gmail", title: "Gmail", url: "https://mail.google.com", note: "邮件与通知", category: "work" },
+  { id: "linuxdo", title: "LINUX DO", url: "https://linux.do", note: "技术交流与社区讨论", category: "work" },
+  { id: "youtube", title: "YouTube", url: "https://www.youtube.com", note: "视频、课程与订阅", category: "daily" },
+  { id: "bilibili", title: "哔哩哔哩", url: "https://www.bilibili.com", note: "视频与稍后再看", category: "daily" },
   { id: "douyin", title: "抖音", url: "https://www.douyin.com", note: "短视频与关注内容", category: "daily" },
   { id: "xiaohongshu", title: "小红书", url: "https://www.xiaohongshu.com", note: "生活灵感与经验分享", category: "daily" },
   { id: "x", title: "X", url: "https://x.com", note: "动态、观点与关注话题", category: "daily" },
-  { id: "youtube", title: "YouTube", url: "https://www.youtube.com", note: "视频、课程与订阅", category: "daily" },
-  { id: "bilibili", title: "哔哩哔哩", url: "https://www.bilibili.com", note: "视频与稍后再看", category: "daily" },
 ];
 
 const emptyDraft: Draft = { title: "", url: "", note: "", icon: "", category: "work" };

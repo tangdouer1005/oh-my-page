@@ -31,6 +31,8 @@ test("server-renders the finished start page", async () => {
   assert.match(html, /抖音/);
   assert.match(html, /小红书/);
   assert.match(html, />X</);
+  assert.doesNotMatch(html, /飞书/);
+  assert.doesNotMatch(html, />ChatGPT</);
   assert.match(html, /编辑/);
   assert.match(html, /黑夜/);
   assert.match(html, /导出/);
@@ -46,7 +48,8 @@ test("includes local configuration and start-page interactions", async () => {
   ]);
 
   assert.match(page, /localStorage\.setItem/);
-  assert.match(page, /google.*baidu.*bing/s);
+  assert.match(page, /google.*bing/s);
+  assert.doesNotMatch(page, /baidu|百度/);
   assert.match(page, /draggable=\{editing\}/);
   assert.match(page, /COLLAPSE_KEY/);
   assert.match(page, /THEME_KEY/);
