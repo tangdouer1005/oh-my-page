@@ -1,0 +1,24 @@
+:root {
+  color-scheme: light dark;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+}
+
+body {
+  display: grid;
+  min-height: 100vh;
+  margin: 0;
+  place-items: center;
+  background: #ffffff;
+  color: #86868b;
+}
+
+p {
+  font-size: 13px;
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background: #000000;
+    color: #8e8e93;
+  }
+}

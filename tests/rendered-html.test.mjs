@@ -72,3 +72,19 @@ test("includes local configuration and start-page interactions", async () => {
   assert.match(staticHtml, /dataset\.style/);
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
 });
+
+test("ships a minimal Chrome new-tab extension", async () => {
+  const [manifestText, newTabHtml, redirectScript] = await Promise.all([
+    readFile(new URL("../extension/manifest.json", import.meta.url), "utf8"),
+    readFile(new URL("../extension/newtab.html", import.meta.url), "utf8"),
+    readFile(new URL("../extension/redirect.js", import.meta.url), "utf8"),
+  ]);
+  const manifest = JSON.parse(manifestText);
+
+  assert.equal(manifest.manifest_version, 3);
+  assert.equal(manifest.chrome_url_overrides.newtab, "newtab.html");
+  assert.equal(manifest.permissions, undefined);
+  assert.match(newTabHtml, /redirect\.js/);
+  assert.doesNotMatch(newTabHtml, /<script[^>]*>[^<]+<\/script>/);
+  assert.match(redirectScript, /tangdouer1005\.github\.io\/oh-my-page\//);
+});
