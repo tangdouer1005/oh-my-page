@@ -319,7 +319,7 @@ html[data-theme="dark"] .export-button:hover {
 
 .section-heading {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto 1fr;
   align-items: center;
   gap: 14px;
   margin: 62px 3px 16px;
@@ -337,8 +337,6 @@ html[data-theme="dark"] .export-button:hover {
   background: var(--line);
 }
 
-.section-heading span:last-child { color: var(--quiet); font-weight: 500; }
-
 .site-groups {
   display: flex;
   flex-direction: column;
@@ -351,7 +349,7 @@ html[data-theme="dark"] .export-button:hover {
 
 .group-header {
   display: grid;
-  grid-template-columns: auto auto 1fr auto auto;
+  grid-template-columns: auto auto 1fr auto;
   align-items: center;
   gap: 11px;
   width: 100%;
@@ -400,20 +398,6 @@ html[data-theme="dark"] .export-button:hover {
   width: 100%;
   height: 1px;
   background: var(--line);
-}
-
-.group-count {
-  display: grid;
-  place-items: center;
-  min-width: 28px;
-  height: 22px;
-  padding: 0 7px;
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  background: rgba(255, 255, 255, 0.5);
-  color: var(--muted);
-  font-family: var(--font-geist-mono, "SFMono-Regular"), Consolas, monospace;
-  font-size: 9px;
 }
 
 .group-chevron {
@@ -940,7 +924,6 @@ html[data-theme="dark"] .search-panel {
   border-color: rgba(255, 255, 255, 0.075);
 }
 
-html[data-theme="dark"] .group-count,
 html[data-theme="dark"] .group-header:hover .group-chevron {
   background: rgba(255, 255, 255, 0.045);
 }
@@ -1122,7 +1105,7 @@ html[data-style="apple"] .search-submit:hover {
 }
 
 html[data-style="apple"] .section-heading {
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr;
   margin-top: 56px;
   font-family: inherit;
   font-size: 11px;
@@ -1154,12 +1137,6 @@ html[data-style="apple"] .group-copy b {
   font-size: 15px;
   font-weight: 600;
   letter-spacing: -0.02em;
-}
-
-html[data-style="apple"] .group-count {
-  border-color: transparent;
-  border-radius: 11px;
-  background: rgba(118, 118, 128, 0.1);
 }
 
 html[data-style="apple"] .site-grid { gap: 16px; }

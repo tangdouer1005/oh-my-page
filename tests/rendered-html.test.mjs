@@ -36,6 +36,7 @@ test("server-renders the finished start page", async () => {
   assert.match(html, /编辑/);
   assert.match(html, /黑夜/);
   assert.match(html, /导出/);
+  assert.doesNotMatch(html, /10 \/ 20|>05</);
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape|react-loading-skeleton/);
 });
 

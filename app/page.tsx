@@ -446,7 +446,6 @@ export default function Home() {
         <div className="section-heading">
           <span>常用网站</span>
           <i />
-          <span>{sites.length.toString().padStart(2, "0")} / {MAX_SITES}</span>
         </div>
 
         <div className="site-groups">
@@ -468,7 +467,6 @@ export default function Home() {
                     <small>{category.hint}</small>
                   </span>
                   <i />
-                  <span className="group-count">{categorySites.length.toString().padStart(2, "0")}</span>
                   <span className="group-chevron" aria-hidden="true">⌄</span>
                 </button>
                 <div className="group-content" id={`group-${category.key}`}>
